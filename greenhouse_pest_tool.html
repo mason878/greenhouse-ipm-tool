@@ -100,6 +100,7 @@ var diseases=[
 {id:"alternaria",name:"Alternaria Leaf Spot",icon:"🔘",sci:"Alternaria spp.",desc:"Dark concentric ring lesions (target spot). Leaf spots and blight. Favored by leaf wetness."}
 ];
 
+
 var currentTab="pest";
 
 function showTab(t){
@@ -142,6 +143,44 @@ function getChems(id,type){
   return r;
 }
 
+function parseRates(info){
+  var method=info.method||"";
+  var rate=info.rate||"";
+  var results=[];
+  if(rate.indexOf(";")!==-1){
+    var parts=rate.split(";");
+    parts.forEach(function(p){
+      p=p.trim();
+      if(!p)return;
+      var m="Application";
+      var r=p;
+      var lower=p.toLowerCase();
+      if(lower.indexOf("foliar")!==-1){m="Foliar spray";r=p.replace(/foliar\s*(spray)?/i,"").replace(/^[\s,;-]+|[\s,;-]+$/g,"").trim();}
+      else if(lower.indexOf("drench")!==-1){m="Drench";r=p.replace(/drench/i,"").replace(/^[\s,;-]+|[\s,;-]+$/g,"").trim();}
+      else if(lower.indexOf("surface")!==-1){m="Surface spray";r=p.replace(/surface\s*spray/i,"").replace(/^[\s,;-]+|[\s,;-]+$/g,"").trim();}
+      if(!r||r.length<3)r=p;
+      results.push({method:m,rate:r});
+    });
+  }
+  else if(method.indexOf(" or ")!==-1){
+    var methods=method.split(" or ");
+    methods.forEach(function(m){
+      m=m.trim();
+      var clean=m.replace(/\(preferred\)/i,"").trim();
+      var label=clean.charAt(0).toUpperCase()+clean.slice(1);
+      var pref=m.toLowerCase().indexOf("preferred")!==-1?" (preferred)":"";
+      if(method.toLowerCase().indexOf("preferred")!==-1&&m.toLowerCase().indexOf("preferred")===-1&&methods.indexOf(m)!==0){
+        /* other method, not preferred */
+      }
+      results.push({method:label+pref,rate:rate});
+    });
+  }
+  else{
+    results.push({method:method,rate:rate});
+  }
+  return results;
+}
+
 function showDetail(p){
   var isPest=pests.indexOf(p)!==-1;
   var type=isPest?"pest":"disease";
@@ -153,7 +192,7 @@ function showDetail(p){
   var chems=getChems(p.id,type);
 
   var h='<div class="detail-header">';
-  h+='<button class="back" onclick="goBack()">&larr; Back to '+( isPest?"Pests":"Diseases")+'</button>';
+  h+='<button class="back" onclick="goBack()">&larr; Back to '+(isPest?"Pests":"Diseases")+'</button>';
   h+='<h2>'+p.icon+' '+p.name+'</h2>';
   h+='<div class="desc">'+p.sci+'</div>';
   h+='<div class="desc" style="margin-top:4px">'+p.desc+'</div>';
@@ -168,7 +207,7 @@ function showDetail(p){
     h+='</div>';
   }
 
-  h+='<div class="disclaimer">⚠️ Always read and follow label directions. Rates are per 100 gal unless noted. Verify current EPA registration status. Test new products on a small area first.</div>';
+  h+='<div class="disclaimer">Always read and follow label directions. Rates are per 100 gal unless noted. Verify current EPA registration. Test new products on a small area first.</div>';
 
   h+='<div class="legend">';
   h+='<div class="legend-item"><span class="eff-dot excellent"></span> Excellent</div>';
@@ -177,7 +216,6 @@ function showDetail(p){
   h+='</div>';
 
   h+='<div class="section-label">'+chems.length+' Chemical Options — sorted by efficacy</div>';
-
   chems.forEach(function(c){h+=renderCard(c,type);});
   dv.innerHTML=h;
   window.scrollTo(0,0);
@@ -208,19 +246,21 @@ function renderCard(c,type){
 
   if(type==="disease"&&info.action){
     h+='<div class="action-type">';
-    if(info.action==="both"){
-      h+='<span class="action-tag both">Preventive + Curative</span>';
-    }else if(info.action==="preventive"){
-      h+='<span class="action-tag preventive">Preventive</span>';
-    }else{
-      h+='<span class="action-tag curative">Curative</span>';
-    }
+    if(info.action==="both"){h+='<span class="action-tag both">Preventive + Curative</span>';}
+    else if(info.action==="preventive"){h+='<span class="action-tag preventive">Preventive</span>';}
+    else{h+='<span class="action-tag curative">Curative</span>';}
     h+='</div>';
   }
 
-  h+='<div class="chem-details">';
-  h+='<div class="chem-detail"><div class="label">Rate</div><div class="value">'+info.rate+'</div></div>';
-  h+='<div class="chem-detail"><div class="label">Method</div><div class="value">'+info.method+'</div></div>';
+  var rates=parseRates(info);
+  h+='<div style="margin-top:8px">';
+  rates.forEach(function(r,i){
+    var bg=i%2===0?"#f8f9f5":"#f0f2eb";
+    h+='<div style="display:flex;gap:6px;padding:8px;background:'+bg+';border-radius:'+(i===0?"8px 8px":"0 0")+(i===rates.length-1?" 0 0 8px 8px":"")+';border-radius:8px;margin-bottom:2px">';
+    h+='<div style="min-width:90px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-sec);font-weight:600;letter-spacing:.3px">Method</div><div style="font-weight:600;font-size:13px;margin-top:2px">'+r.method+'</div></div>';
+    h+='<div style="flex:1"><div style="font-size:10px;text-transform:uppercase;color:var(--text-sec);font-weight:600;letter-spacing:.3px">Rate</div><div style="font-weight:600;font-size:13px;margin-top:2px">'+r.rate+'</div></div>';
+    h+='</div>';
+  });
   h+='</div>';
 
   h+='<div class="notes-box">'+info.notes+'</div>';
