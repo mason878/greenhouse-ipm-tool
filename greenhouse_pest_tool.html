@@ -100,13 +100,160 @@ var diseases=[
 {id:"alternaria",name:"Alternaria Leaf Spot",icon:"🔘",sci:"Alternaria spp.",desc:"Dark concentric ring lesions (target spot). Leaf spots and blight. Favored by leaf wetness."}
 ];
 
-var currentTab="pests";
-function showTab(t){currentTab=t;document.querySelectorAll(".tab").forEach(function(e){e.classList.toggle("active",e.dataset.tab===t)});document.getElementById("pestList").style.display=t==="pests"?"block":"none";document.getElementById("diseaseList").style.display=t==="diseases"?"block":"none";document.getElementById("detailView").style.display="none";document.getElementById("searchBar").value="";renderList()}
-function renderList(){var list=currentTab==="pests"?pests:diseases;var el=document.getElementById(currentTab==="pests"?"pestList":"diseaseList");el.innerHTML="";list.forEach(function(p){var d=document.createElement("div");d.className="card";d.onclick=function(){showDetail(p)};d.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:28px">'+p.icon+'</span><div><div style="font-weight:700;font-size:16px">'+p.name+'</div><div style="font-size:13px;color:var(--muted);font-style:italic">'+p.sci+'</div><div style="font-size:13px;color:var(--muted);margin-top:2px">'+p.desc+'</div></div></div>';el.appendChild(d)})}
-function getChems(id,type){var r=[];for(var k in C){var c=C[k];var t=type==="pest"?c.pests:c.diseases;if(t&&t[id]){var info=t[id];var eff=info.efficacy==="Excellent"?3:info.efficacy==="Good"?2:1;r.push({key:k,chem:c,info:info,effNum:eff})}}r.sort(function(a,b){return b.effNum-a.effNum});return r}
-function showDetail(p){var isPest=pests.indexOf(p)!==-1;var type=isPest?"pest":"disease";document.getElementById("pestList").style.display="none";document.getElementById("diseaseList").style.display="none";var dv=document.getElementById("detailView");dv.style.display="block";var ipm=ipmStrategies[p.id];var chems=getChems(p.id,type);var h='<div class="back-btn" onclick="goBack()">← Back</div>';h+='<div style="text-align:center;margin-bottom:16px"><span style="font-size:40px">'+p.icon+'</span><h2 style="margin:8px 0 2px">'+p.name+'</h2><div style="font-style:italic;color:var(--muted)">'+p.sci+'</div></div>';if(ipm){h+='<div class="section-title">🔍 Scouting</div><div class="card">'+ipm.scouting+'</div>';h+='<div class="section-title">🏡 Cultural Controls</div><div class="card">'+ipm.cultural+'</div>';if(ipm.biological){h+='<div class="section-title">🪲 Biological Controls</div><div class="card">'+ipm.biological+'</div>'}h+='<div class="section-title">🔄 Chemical Rotation Strategy</div><div class="card" style="background:#1a2e1a;border-left:3px solid var(--accent)">'+ipm.chemRotation+'</div>'}h+='<div class="section-title">🧪 Chemical Options ('+chems.length+' products)</div>';chems.forEach(function(c){h+=renderCard(c,type,p.id)});dv.innerHTML=h;dv.scrollTop=0}
-function renderCard(c,type,pid){var info=c.info;var chem=c.chem;var eColor=info.efficacy==="Excellent"?"#4ade80":info.efficacy==="Good"?"#facc15":"#f87171";var stages="";if(type==="pest"&&info.stages){stages='<div style="margin-top:6px;font-size:12px">';var s=info.stages;stages+='<span style="margin-right:8px">Egg: '+(s.E==="yes"?"✅":s.E==="partial"?"🟡":"❌")+'</span>';stages+='<span style="margin-right:8px">Larva/Nymph: '+(s.L==="yes"?"✅":s.L==="partial"?"🟡":"❌")+'</span>';stages+='<span>Adult: '+(s.A==="yes"?"✅":s.A==="partial"?"🟡":"❌")+'</span>';stages+='</div>'}var action="";if(type==="disease"&&info.action){action='<div style="margin-top:4px;font-size:12px">Type: <strong style="color:'+(info.action==="both"?"#4ade80":info.action==="curative"?"#facc15":"#60a5fa")+'">'+info.action.charAt(0).toUpperCase()+info.action.slice(1)+'</strong></div>'}var h='<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap"><strong style="font-size:15px">'+chem.name+'</strong><span class="badge" style="background:'+eColor+';color:#000">'+info.efficacy+'</span></div>';h+='<div style="font-size:12px;color:var(--muted);margin-top:4px">'+chem.ai+' | '+chem.groupType+' '+chem.group+' | REI '+chem.rei+'</div>';h+='<div style="margin-top:6px;font-size:13px"><strong>Rate:</strong> '+info.rate+'</div>';h+='<div style="font-size:13px"><strong>Method:</strong> '+info.method+'</div>';h+=stages+action;h+='<div style="margin-top:6px;font-size:13px">'+info.notes+'</div>';if(info.combo){h+='<div style="margin-top:6px;padding:6px 8px;background:#1a2e1a;border-radius:6px;font-size:12px;border-left:2px solid var(--accent)">🔄 '+info.combo+'</div>'}h+='</div>';return h}
-function goBack(){document.getElementById("detailView").style.display="none";document.getElementById(currentTab==="pests"?"pestList":"diseaseList").style.display="block"}
-function filterCards(){var q=document.getElementById("searchBar").value.toLowerCase();var list=currentTab==="pests"?pests:diseases;var el=document.getElementById(currentTab==="pests"?"pestList":"diseaseList");el.innerHTML="";list.filter(function(p){return p.name.toLowerCase().indexOf(q)!==-1||p.sci.toLowerCase().indexOf(q)!==-1||p.desc.toLowerCase().indexOf(q)!==-1}).forEach(function(p){var d=document.createElement("div");d.className="card";d.onclick=function(){showDetail(p)};d.innerHTML='<div style="display:flex;align-items:center;gap:12px"><span style="font-size:28px">'+p.icon+'</span><div><div style="font-weight:700;font-size:16px">'+p.name+'</div><div style="font-size:13px;color:var(--muted);font-style:italic">'+p.sci+'</div><div style="font-size:13px;color:var(--muted);margin-top:2px">'+p.desc+'</div></div></div>';el.appendChild(d)})}
+var currentTab="pest";
+
+function showTab(t){
+  currentTab=t;
+  var tabs=document.querySelectorAll(".tab");
+  tabs[0].className=t==="pest"?"tab active":"tab";
+  tabs[1].className=t==="disease"?"tab active":"tab";
+  document.getElementById("pestList").className=t==="pest"?"grid-visible":"";
+  document.getElementById("diseaseList").className=t==="disease"?"grid-visible":"";
+  document.getElementById("detailView").className="";
+  document.getElementById("searchInput").value="";
+  renderList();
+}
+
+function renderList(){
+  var list=currentTab==="pest"?pests:diseases;
+  var el=document.getElementById(currentTab==="pest"?"pestList":"diseaseList");
+  el.innerHTML="";
+  list.forEach(function(p){
+    var d=document.createElement("div");
+    d.className="pest-card";
+    d.onclick=function(){showDetail(p)};
+    d.innerHTML='<div class="icon">'+p.icon+'</div><div class="name">'+p.name+'</div><div class="sci">'+p.sci+'</div>';
+    el.appendChild(d);
+  });
+}
+
+function getChems(id,type){
+  var r=[];
+  for(var k in C){
+    var c=C[k];
+    var t=type==="pest"?c.pests:c.diseases;
+    if(t&&t[id]){
+      var info=t[id];
+      var eff=info.efficacy==="Excellent"?3:info.efficacy==="Good"?2:1;
+      r.push({key:k,chem:c,info:info,effNum:eff});
+    }
+  }
+  r.sort(function(a,b){return b.effNum-a.effNum});
+  return r;
+}
+
+function showDetail(p){
+  var isPest=pests.indexOf(p)!==-1;
+  var type=isPest?"pest":"disease";
+  document.getElementById("pestList").className="";
+  document.getElementById("diseaseList").className="";
+  var dv=document.getElementById("detailView");
+  dv.className="visible";
+  var ipm=ipmStrategies[p.id];
+  var chems=getChems(p.id,type);
+
+  var h='<div class="detail-header">';
+  h+='<button class="back" onclick="goBack()">&larr; Back to '+( isPest?"Pests":"Diseases")+'</button>';
+  h+='<h2>'+p.icon+' '+p.name+'</h2>';
+  h+='<div class="desc">'+p.sci+'</div>';
+  h+='<div class="desc" style="margin-top:4px">'+p.desc+'</div>';
+  h+='</div>';
+
+  if(ipm){
+    h+='<div class="ipm-box"><h3>IPM Strategy</h3>';
+    h+='<div class="strategy"><span class="strat-label">Scouting: </span><span class="strat-text">'+ipm.scouting+'</span></div>';
+    h+='<div class="strategy"><span class="strat-label">Cultural: </span><span class="strat-text">'+ipm.cultural+'</span></div>';
+    if(ipm.biological){h+='<div class="strategy"><span class="strat-label">Biological: </span><span class="strat-text">'+ipm.biological+'</span></div>';}
+    h+='<div class="strategy"><span class="strat-label">Chemical Rotation: </span><span class="strat-text">'+ipm.chemRotation+'</span></div>';
+    h+='</div>';
+  }
+
+  h+='<div class="disclaimer">⚠️ Always read and follow label directions. Rates are per 100 gal unless noted. Verify current EPA registration status. Test new products on a small area first.</div>';
+
+  h+='<div class="legend">';
+  h+='<div class="legend-item"><span class="eff-dot excellent"></span> Excellent</div>';
+  h+='<div class="legend-item"><span class="eff-dot good"></span> Good</div>';
+  h+='<div class="legend-item"><span class="eff-dot fair"></span> Fair</div>';
+  h+='</div>';
+
+  h+='<div class="section-label">'+chems.length+' Chemical Options — sorted by efficacy</div>';
+
+  chems.forEach(function(c){h+=renderCard(c,type);});
+  dv.innerHTML=h;
+  window.scrollTo(0,0);
+}
+
+function renderCard(c,type){
+  var info=c.info;var chem=c.chem;
+  var effClass=info.efficacy==="Excellent"?"excellent":info.efficacy==="Good"?"good":"fair";
+  var groupBadge=chem.groupType==="IRAC"?"irac":"frac";
+
+  var h='<div class="chem-card">';
+  h+='<div class="chem-top"><div><div class="chem-name">'+chem.name+'</div><div class="chem-ai">'+chem.ai+'</div></div></div>';
+
+  h+='<div class="badges">';
+  h+='<span class="badge '+groupBadge+'">'+chem.groupType+' '+chem.group+'</span>';
+  h+='<span class="badge eff" style="background:'+(effClass==="excellent"?"#e8f5e9":effClass==="good"?"#f1f8e9":"#fff8e1")+';color:'+(effClass==="excellent"?"#1b5e20":effClass==="good"?"#33691e":"#f57f17")+'">'+info.efficacy+'</span>';
+  h+='<span class="badge" style="background:#fafafa;color:#555">REI '+chem.rei+'</span>';
+  h+='</div>';
+
+  if(type==="pest"&&info.stages){
+    var s=info.stages;
+    h+='<div class="stages">';
+    h+='<div class="stage '+(s.E==="yes"?"yes":s.E==="partial"?"partial":"no")+'"><div class="s-icon">'+(s.E==="yes"?"✅":s.E==="partial"?"🟡":"—")+'</div><div class="s-label">Egg</div></div>';
+    h+='<div class="stage '+(s.L==="yes"?"yes":s.L==="partial"?"partial":"no")+'"><div class="s-icon">'+(s.L==="yes"?"✅":s.L==="partial"?"🟡":"—")+'</div><div class="s-label">Larva</div></div>';
+    h+='<div class="stage '+(s.A==="yes"?"yes":s.A==="partial"?"partial":"no")+'"><div class="s-icon">'+(s.A==="yes"?"✅":s.A==="partial"?"🟡":"—")+'</div><div class="s-label">Adult</div></div>';
+    h+='</div>';
+  }
+
+  if(type==="disease"&&info.action){
+    h+='<div class="action-type">';
+    if(info.action==="both"){
+      h+='<span class="action-tag both">Preventive + Curative</span>';
+    }else if(info.action==="preventive"){
+      h+='<span class="action-tag preventive">Preventive</span>';
+    }else{
+      h+='<span class="action-tag curative">Curative</span>';
+    }
+    h+='</div>';
+  }
+
+  h+='<div class="chem-details">';
+  h+='<div class="chem-detail"><div class="label">Rate</div><div class="value">'+info.rate+'</div></div>';
+  h+='<div class="chem-detail"><div class="label">Method</div><div class="value">'+info.method+'</div></div>';
+  h+='</div>';
+
+  h+='<div class="notes-box">'+info.notes+'</div>';
+
+  if(info.combo){
+    h+='<div class="combo-box"><strong>Combo/Rotation: </strong>'+info.combo+'</div>';
+  }
+
+  h+='</div>';
+  return h;
+}
+
+function goBack(){
+  document.getElementById("detailView").className="";
+  document.getElementById(currentTab==="pest"?"pestList":"diseaseList").className="grid-visible";
+  window.scrollTo(0,0);
+}
+
+function filterCards(){
+  var q=document.getElementById("searchInput").value.toLowerCase();
+  var list=currentTab==="pest"?pests:diseases;
+  var el=document.getElementById(currentTab==="pest"?"pestList":"diseaseList");
+  el.innerHTML="";
+  list.filter(function(p){
+    return p.name.toLowerCase().indexOf(q)!==-1||p.sci.toLowerCase().indexOf(q)!==-1||p.desc.toLowerCase().indexOf(q)!==-1;
+  }).forEach(function(p){
+    var d=document.createElement("div");
+    d.className="pest-card";
+    d.onclick=function(){showDetail(p)};
+    d.innerHTML='<div class="icon">'+p.icon+'</div><div class="name">'+p.name+'</div><div class="sci">'+p.sci+'</div>';
+    el.appendChild(d);
+  });
+}
+
 renderList();
 </script></body></html>
